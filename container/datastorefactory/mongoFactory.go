@@ -7,7 +7,7 @@ import (
 
 	"github.com/Naist4869/awesomeProject/config"
 	"github.com/Naist4869/awesomeProject/container"
-	"github.com/Naist4869/awesomeProject/dataservice/userDao/mongo"
+	"github.com/Naist4869/awesomeProject/dataservice/userdao/mongo"
 	mongodriver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

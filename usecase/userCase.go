@@ -7,7 +7,7 @@ import (
 
 type IUserRegistration interface {
 	// 注册用户
-	RegisterUser(u *usermodel.User) (err error)
+	RegisterUser(u usermodel.RegisterArgument) (err error)
 	// 注销用户
 	UnregisterUser(userID int64) error
 	// 修改用户

@@ -1,4 +1,4 @@
-package mongo
+package gdbc
 
 import (
 	"reflect"
@@ -6,11 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-// DBComponent 对需要数据库的业务模块的抽象
-type DBComponent interface {
-	Keys() map[string]*Spec
-}
 
 // Spec 对数据库表的抽象描述
 type Spec struct {

@@ -5,7 +5,7 @@ import (
 	"github.com/Naist4869/awesomeProject/container"
 	"github.com/Naist4869/awesomeProject/container/datastorefactory"
 	"github.com/Naist4869/awesomeProject/dataservice"
-	"github.com/Naist4869/awesomeProject/dataservice/userDao/mongo"
+	"github.com/Naist4869/awesomeProject/dataservice/userdao/mongo"
 	"github.com/Naist4869/log"
 	mongodriver "go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"

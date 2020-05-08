@@ -1,4 +1,4 @@
-package usercasefactory
+package usecasefactory
 
 import (
 	"github.com/Naist4869/awesomeProject/config"

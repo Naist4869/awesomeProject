@@ -3,6 +3,9 @@ package mongo
 import (
 	"context"
 	"reflect"
+	"strings"
+
+	"github.com/Naist4869/awesomeProject/tool/gdbc"
 
 	"github.com/Naist4869/awesomeProject/model/usermodel"
 
@@ -16,11 +19,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/mongo"
-)
-
-const (
-	DBUserVersion = 1
-	DBUserKey     = "users"
 )
 
 var (
@@ -38,9 +36,9 @@ func NewUserClient(client *mongo.Client, DB string, logger *log.Logger) *UserCli
 	return &UserClient{Client: client, DB: DB, collections: make(map[string]*mongo.Collection, 3), Logger: logger}
 }
 
-func (uc *UserClient) Keys() map[string]*Spec {
-	specs := make(map[string]*Spec, 1)
-	userSpec, err := NewSpec(DBUserVersion, func() interface{} {
+func (uc *UserClient) Keys() map[string]*gdbc.Spec {
+	specs := make(map[string]*gdbc.Spec, 1)
+	userSpec, err := gdbc.NewSpec(usermodel.DBUserVersion, func() interface{} {
 		return &usermodel.User{}
 	}, func(data interface{}) error {
 		return nil
@@ -48,10 +46,12 @@ func (uc *UserClient) Keys() map[string]*Spec {
 	if err != nil {
 		uc.Logger.Fatal("构建updater失败:", zap.Error(err))
 	}
-	specs[DBUserKey] = userSpec
+	specs[usermodel.DBUserKey] = userSpec
 	return specs
 }
+
 func (uc *UserClient) Init() error {
+
 	keys := uc.Keys()
 	for key, spec := range keys {
 		collection := uc.Client.Database(uc.DB).Collection(key)
@@ -59,8 +59,20 @@ func (uc *UserClient) Init() error {
 		if spec != nil {
 			spec.SetCollection(collection)
 		}
+		if err := gdbc.EnsureIndex(collection, []gdbc.Index{
+			{
+				Name: "手机号",
+				Data: mongo.IndexModel{
+					Keys:    bson.M{usermodel.PhoneField: 1},
+					Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.M{usermodel.DeletedField: false}),
+				},
+				Version: 1,
+			},
+		}, uc.Logger); err != nil {
+			return errors.Wrap(err, "检查并创建索引失败")
+		}
 	}
-	updater, err := NewUpdater(keys, uc.Logger)
+	updater, err := gdbc.NewUpdater(keys, uc.Logger)
 	if err != nil {
 		return errors.Wrap(err, "构建collection升级器失败")
 	}
@@ -75,7 +87,14 @@ func (uc *UserClient) Remove(userID int64) (err error) {
 }
 
 func (uc *UserClient) Insert(u *usermodel.User) (err error) {
-	if _, err = uc.collections[DBUserKey].InsertOne(context.Background(), *u); err != nil {
+	if _, err = uc.collections[usermodel.DBUserKey].InsertOne(context.Background(), *u); err != nil {
+		if IsInsertDuplicateError(err) {
+			errMsg := err.Error()
+			strings.Contains(errMsg, "index: 手机号")
+			err = dataservice.ErrPhoneExists
+			return
+		}
+		err = dataservice.ErrInsertFailed
 		return
 	}
 	return
@@ -135,7 +154,7 @@ func (uc *UserClient) queryUser(ctx context.Context, query bson.M, sort []string
 		query = make(bson.M, 1)
 	}
 	query[usermodel.DeletedField] = false // 查询未删除的数据
-	results, count, err = uc.baseQuery(uc.collections[DBUserKey], ctx, query, sort, start, limit, include, exclude, data, collations...)
+	results, count, err = uc.baseQuery(uc.collections[usermodel.DBUserKey], ctx, query, sort, start, limit, include, exclude, data, collations...)
 	if err != nil {
 		return
 	}
@@ -223,4 +242,7 @@ func convertSort(sorts []string) (result bson.D) {
 		})
 	}
 	return
+}
+func IsInsertDuplicateError(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "E11000 duplicate key error collection")
 }

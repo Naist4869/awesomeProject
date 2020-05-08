@@ -3,7 +3,7 @@ package servicecontainer
 import (
 	"github.com/Naist4869/awesomeProject/config"
 	"github.com/Naist4869/awesomeProject/container/loggerfactory"
-	"github.com/Naist4869/awesomeProject/container/usercasefactory"
+	"github.com/Naist4869/awesomeProject/container/usecasefactory"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +22,7 @@ func (s *ServiceContainer) InitApp() error {
 }
 
 func (s *ServiceContainer) BuildUseCase(code string) (interface{}, error) {
-	return usercasefactory.GetUseCaseFb(code)(s, s.AppConfig, code)
+	return usecasefactory.GetUseCaseFb(code)(s, s.AppConfig)
 }
 
 func (s *ServiceContainer) Get(code string) (interface{}, bool) {

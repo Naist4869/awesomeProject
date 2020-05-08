@@ -1,15 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"net/http"
+
+	"github.com/Naist4869/awesomeProject/api/views"
+
+	"github.com/Naist4869/awesomeProject/usecase"
+
+	"github.com/Naist4869/awesomeProject/api/handler"
+	"github.com/Naist4869/awesomeProject/model"
 
 	"github.com/Naist4869/awesomeProject/config"
 	"github.com/Naist4869/awesomeProject/container"
 	"github.com/Naist4869/awesomeProject/container/servicecontainer"
-	"github.com/Naist4869/awesomeProject/model/usermodel"
-	"github.com/Naist4869/awesomeProject/tool"
-	"github.com/Naist4869/awesomeProject/usecase"
 	"github.com/Naist4869/log"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -17,14 +20,25 @@ import (
 
 func main() {
 	testMongo()
+	select {}
 }
 func testMongo() {
 	c, err := buildContainer()
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		log.BaseLogger.Fatal("构建容器失败", zap.Error(err))
 		return
 	}
-	testRegisterUser(c)
+	registrationUseCase, err := getRegistrationUseCase(c)
+	if err != nil {
+		log.BaseLogger.Fatal("获取用例失败", zap.Error(err))
+		return
+	}
+	controller := handler.NewUserController(registrationUseCase, views.View{})
+	r := http.NewServeMux()
+	controller.MakeUserHandler(r)
+	if err = http.ListenAndServe("127.0.0.1:1237", r); err != nil {
+		log.BaseLogger.Fatal("服务端启动失败", zap.Error(err))
+	}
 }
 
 func buildContainer() (container.Container, error) {
@@ -39,44 +53,10 @@ func buildContainer() (container.Container, error) {
 }
 
 func getRegistrationUseCase(c container.Container) (usecase.IUserRegistration, error) {
-	key := config.REGISTRATION
+	key := model.REGISTRATION
 	value, err := c.BuildUseCase(key)
 	if err != nil {
-		// logger.Log.Errorf("%+v\n", err)
 		return nil, errors.Wrap(err, "getRegistrationUseCase")
 	}
 	return value.(usecase.IUserRegistration), nil
-
-}
-func testRegisterUser(container container.Container) {
-	ruci, err := getRegistrationUseCase(container)
-	if err != nil {
-		log.BaseLogger.Fatal("registration interface build failed\n", zap.Error(err))
-	}
-	created, err := time.Parse(tool.FormatIso8601Date, "2018-12-09")
-	if err != nil {
-		log.BaseLogger.Error("date format\n", zap.Error(err))
-		return
-	}
-
-	user := usermodel.User{
-		ID:           1,
-		Phone:        "123123123123",
-		NickName:     "Lan",
-		PID:          0,
-		Status:       0,
-		AddTime:      created,
-		ActivateTime: time.Time{},
-		OperateTime:  time.Time{},
-		AgentTrait:   usermodel.AgentTrait{},
-		WeChatTrait:  usermodel.WeChatTrait{},
-		Deleted:      false,
-		Meta:         usermodel.DbMeta{Version: 1},
-	}
-
-	if err := ruci.RegisterUser(&user); err != nil {
-		log.BaseLogger.Error("user registration failed\n", zap.Error(err))
-	}
-	log.BaseLogger.Info("new user registered")
-
 }

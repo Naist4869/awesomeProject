@@ -1,6 +1,14 @@
 package dataservice
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	ErrPhoneExists  = errors.New("手机号码已存在")
+	ErrInsertFailed = errors.New("保存用户信息失败")
+)
 
 // ErrIDNotFound 指定ID的用户不存在错误
 type ErrIDNotFound struct {
@@ -29,5 +37,4 @@ func (e ErrPhoneNotFound) Error() string {
 func IsErrPhoneNotFound(err error) bool {
 	_, ok := err.(ErrPhoneNotFound)
 	return ok
-
 }

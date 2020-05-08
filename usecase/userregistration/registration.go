@@ -12,7 +12,7 @@ type UseCase struct {
 	UserDataInterface dataservice.IUserDataService
 }
 
-func (i *UseCase) RegisterUser(u *usermodel.User) (err error) {
+func (i *UseCase) RegisterUser(u usermodel.RegisterArgument) (err error) {
 	if u.PID > 0 {
 		var count int64
 		_, count, err = i.UserDataInterface.FindByPID(u.PID)
@@ -24,7 +24,9 @@ func (i *UseCase) RegisterUser(u *usermodel.User) (err error) {
 			return
 		}
 	}
-	err = i.UserDataInterface.Insert(u)
+
+	user := u.NewUserData(2)
+	err = i.UserDataInterface.Insert(user)
 	return
 }
 

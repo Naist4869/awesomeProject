@@ -1,4 +1,4 @@
-package config
+package model
 
 // constant for logger code, it needs to match log code (logConfig)in configuration
 const (
