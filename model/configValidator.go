@@ -12,6 +12,7 @@ const (
 	CACHE_DATA  string = "cacheData"
 	TX_DATA     string = "txData"
 	COURSE_DATA string = "courseData"
+	WORKWX_DATA string = "workWxData"
 )
 const (
 	SQLDB      string = "sqldb"
@@ -27,4 +28,5 @@ const (
 	REGISTRATION string = "registration"
 	LIST_USER    string = "listUser"
 	LIST_COURSE  string = "listCourse"
+	WORKWX       string = "workWx"
 )

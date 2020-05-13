@@ -1,0 +1,86 @@
+sqlConfig: &sqlConfig
+  code: sqldb
+  driverName: mysql
+  host: localhost
+  port: 4333
+  user: root
+  pass:
+  db: service_config
+#"root:@tcp(localhost:4333)/service_config?charset=utf8"
+couchdbConfig: &couchdbConfig
+  code: couch
+  driverName: couch
+  host: localhost
+  port: 5984
+  user: admin
+  pass: admin
+  dbName: service_config
+cacheGrpcConfig: &cacheGrpcConfig
+  code: cacheGrpc
+  driverName: tcp
+  host: localhost
+  port: 5051
+  user:
+  pass:
+  db:
+mongodbConfig: &mongodbConfig
+  code: mongodb
+  driverName: mongo
+  host: localhost
+  port: 27018
+  user: my_user
+  pass: password123
+  db: baisong
+userGrpcConfig: &userGrpcConfig
+  code: userGrpc
+  driverName: tcp
+  urlAddress: localhost:5052
+zapConfig: &zapConfig
+  code: zap
+  maxSize: 500
+  maxAge: 30
+  logDir: logs
+  name: awesomeProject
+  debug: true
+  console: true
+  minLevel:
+    main: debug
+logrusConfig: &logrusConfig
+  code: logrus
+  maxSize: 500
+  maxAge: 30
+  logDir: logs
+  name: awesomeProject
+  debug: true
+  console: true
+  minLevel:
+    "main":
+logConfig: *zapConfig
+useCaseConfig:
+  registration:
+    code: registration
+    userDataConfig: &userDataConfig
+      code: userData
+      dataStoreConfig: *mongodbConfig
+    txDataConfig: &txDataConfig
+      code: txData
+      dataStoreConfig: *sqlConfig
+  listUser:
+    code: listUser
+    userDataConfig: *userDataConfig
+    cacheDataConfig: &cacheDataConfig
+      code: cacheData
+      dataStoreConfig: *cacheGrpcConfig
+  listCourse:
+    code: listCourse
+    courseDataConfig: &courseDataConfig
+      code: courseData
+      dataStoreConfig: *sqlConfig
+  workWx:
+    code: workWx
+    corpID:
+    corpSecret:
+    agentID: 1000002
+    workWxDataConfig:
+      code: workWxData
+      dataStoreConfig: *mongodbConfig

@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Naist4869/awesomeProject/tool"
 	"github.com/pkg/errors"
+
+	"github.com/Naist4869/awesomeProject/tool"
 	"gopkg.in/yaml.v2"
 )
 

@@ -3,6 +3,8 @@ package dataservice
 import (
 	"context"
 
+	"github.com/Naist4869/awesomeProject/model/wxmodel"
+
 	"github.com/Naist4869/awesomeProject/model/usermodel"
 )
 
@@ -21,4 +23,8 @@ type IUserDataService interface {
 	FindByPhone(phone string) (user *usermodel.User, err error)
 	// 更新操作
 	Update(user *usermodel.User) (err error)
+}
+
+type IWorkWxDataService interface {
+	Insert(u *wxmodel.UserInfo) (err error)
 }

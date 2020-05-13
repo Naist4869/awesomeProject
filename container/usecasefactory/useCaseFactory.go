@@ -8,6 +8,7 @@ import (
 
 var BuilderMap = map[string]Factory{
 	model.REGISTRATION: RegistrationFactory,
+	model.WORKWX:       WorkWxFactory,
 }
 
 type Factory func(c container.Container, appConfig *config.AppConfig) (interface{}, error)

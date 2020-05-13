@@ -9,7 +9,8 @@ import (
 type Factory func(container.Container, *config.DataConfig) (interface{}, error)
 
 var dataServiceFactoryBuilder = map[string]Factory{
-	model.USER_DATA: userDataServiceFactory,
+	model.USER_DATA:   userDataServiceFactory,
+	model.WORKWX_DATA: workWxDataServiceFactory,
 }
 
 // GetDataServiceFb is accessors for factoryBuilderMap

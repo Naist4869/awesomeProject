@@ -26,6 +26,14 @@ type UseCaseConfig struct {
 	Registration RegistrationConfig `yaml:"registration"`
 	ListUser     ListUserConfig     `yaml:"listUser"`
 	ListCourse   ListCourseConfig   `yaml:"listCourse"`
+	WorkWx       WorkWxConfig       `yaml:"workWx"`
+}
+type WorkWxConfig struct {
+	Code             string     `yaml:"code"`
+	CorpID           string     `yaml:"corpID"`
+	CorpSecret       string     `yaml:"corpSecret"`
+	AgentID          int64      `yaml:"agentID"`
+	WorkWxDataConfig DataConfig `yaml:"workWxDataConfig"`
 }
 
 // RegistrationConfig represents registration use case
