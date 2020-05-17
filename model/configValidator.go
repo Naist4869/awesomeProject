@@ -30,3 +30,6 @@ const (
 	LIST_COURSE  string = "listCourse"
 	WORKWX       string = "workWx"
 )
+const (
+	Prometheus string = "prometheus"
+)

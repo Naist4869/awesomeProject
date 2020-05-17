@@ -1,6 +1,8 @@
 package servicecontainer
 
 import (
+	"fmt"
+
 	"github.com/Naist4869/awesomeProject/config"
 	"github.com/Naist4869/awesomeProject/container/loggerfactory"
 	"github.com/Naist4869/awesomeProject/container/usecasefactory"
@@ -15,10 +17,14 @@ type ServiceContainer struct {
 func (s *ServiceContainer) InitApp() error {
 	appConfig, err := loadConfig()
 	if err != nil {
-		return errors.Wrap(err, "loadConfig")
+		return fmt.Errorf("loadConfig error: %w", err)
 	}
 	s.AppConfig = appConfig
-	return loadLogger(appConfig.Log)
+	if err := loadLogger(appConfig.Log); err != nil {
+		return fmt.Errorf("loadLogger error: %w", err)
+	}
+
+	return nil
 }
 
 func (s *ServiceContainer) BuildUseCase(code string) (interface{}, error) {

@@ -8,17 +8,26 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
 	// TODO: error handling
 	filename := os.Args[1]
 	var destFilename string
+	var pkg string
 	if len(os.Args) == 3 {
 		destFilename = os.Args[2]
 	} else {
 		// blindly append `.go` so the result looks like `foo.md.go`
 		destFilename = filename + ".go"
+
+	}
+	pkg, _ = filepath.Split(destFilename)
+	split := strings.Split(pkg, `/`)
+	if len(split)-2 >= 0 {
+		pkg = split[len(split)-2]
 	}
 
 	emitToStdout := destFilename == "-"
@@ -67,7 +76,7 @@ func main() {
 		Sink: sink,
 	}
 
-	err = em.EmitCode(&hir)
+	err = em.EmitCode(&hir, pkg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "code emission failed: %+v\n", err)
 		os.Exit(1)
