@@ -1,7 +1,11 @@
 package adapter
 
-import "context"
+import (
+	"context"
 
-type Adapter interface {
-	CategoryGoodsGet(ctx context.Context)
+	"github.com/Naist4869/awesomeProject/model/jdmodel"
+)
+
+type Service interface {
+	CategoryGoodsGet(context.Context, jdmodel.CategoryGoodsGetReq) (jdmodel.CategoryGoodsGet, error)
 }

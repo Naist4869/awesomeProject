@@ -1,11 +1,17 @@
 package officialmodel
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"strings"
 	"time"
 )
+
+type xmlRxEncryptEnvelope struct {
+	ToUserName string `xml:"ToUserName"`
+	Encrypt    string `xml:"Encrypt"`
+}
 
 // RxMessage 一条接收到的消息
 type RxMessage struct {
@@ -23,7 +29,7 @@ type RxMessage struct {
 	extras messageKind
 }
 
-func fromEnvelope(body []byte) (rxMessage *RxMessage, err error) {
+func FromEnvelope(body []byte) (rxMessage *RxMessage, err error) {
 	// extract common part
 	var (
 		common rxMessageCommon
@@ -53,6 +59,20 @@ func fromEnvelope(body []byte) (rxMessage *RxMessage, err error) {
 
 	return
 }
+
+//func ToEnvelope(message *RxMessage, messageType MessageType, content map[string]interface{}) ([]byte, error) {
+//	extras, err := insertMessageExtras(messageType, content)
+//
+//	newone := RxMessage{
+//		ToUserName: message.FromUserID,
+//		FromUserID: message.ToUserName,
+//		SendTime:   time.Now(),
+//		MsgType:    messageType,
+//		MsgID:      message.MsgID,
+//		extras:     nil,
+//	}
+//
+//}
 func (m *RxMessage) String() string {
 	var sb strings.Builder
 
@@ -71,6 +91,31 @@ func (m *RxMessage) String() string {
 	sb.WriteString(" }")
 
 	return sb.String()
+}
+func (m *RxMessage) MessageMarshal() (reply string, err error) {
+	var body, marshal []byte
+	common := prMessageCommon{
+		ToUserName:   cdataNode{CData: m.FromUserID},
+		FromUserName: cdataNode{CData: m.ToUserName},
+		CreateTime:   time.Now().Unix(),
+		MsgType:      cdataNode{CData: string(m.MsgType)},
+		MsgID:        m.MsgID,
+	}
+	marshal, err = xml.Marshal(common)
+	if err != nil {
+		return
+	}
+
+	marshal = bytes.TrimSuffix(marshal, []byte("</xml>"))
+	extrasMarshal, err := m.extras.MessageMarshal()
+	l := len(marshal)
+	el := len(extrasMarshal)
+	body = make([]byte, l+el+6)
+	copy(body[:], marshal)
+	copy(body[l:], extrasMarshal)
+	copy(body[l+el:], "</xml>")
+	reply = string(body)
+	return
 }
 
 // Text 如果消息为文本类型，则拿出相应的消息参数，否则返回 nil, false

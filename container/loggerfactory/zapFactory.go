@@ -6,7 +6,7 @@ import (
 )
 
 func ZapFactory(lc config.LogConfig) error {
-	logger := log.NewLogger(lc.MaxSize, lc.MaxAge, lc.LogDir, lc.Name, lc.Console, lc.Debug, lc.MinLevel["app"])
+	logger := log.NewLogger(lc.MaxSize, lc.MaxAge, lc.LogDir, lc.Name, lc.Console, lc.Debug, lc.MinLevel["main"])
 	log.SetLogger(logger)
 	return nil
 }

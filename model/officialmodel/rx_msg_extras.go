@@ -9,6 +9,7 @@ import (
 // NOTE: 这顺便就构成了一个封闭的 enum
 type messageKind interface {
 	formatInto(io.Writer)
+	MessageMarshal() ([]byte, error)
 }
 
 func extractMessageExtras(ty MessageType, body []byte) (messageKind, error) {
@@ -74,12 +75,71 @@ func extractMessageExtras(ty MessageType, body []byte) (messageKind, error) {
 
 }
 
+//func insertMessageExtras(ty MessageType, content map[string]interface{}) (extraBytes []byte,err error) {
+//	switch ty {
+//	case MessageTypeText:
+//		var x rxTextMessageSpecifics
+//		x.Content=content[ContentField].(string)
+//		return xml.Marshal(x)
+//	case MessageTypeImage:
+//		var x rxImageMessageSpecifics
+//		x.MediaID=content[MediaIDField].(string)
+//		x.PicURL=content[PicURLField].(string)
+//		return xml.Marshal(x)
+//	case MessageTypeVoice:
+//		var x rxVoiceMessageSpecifics
+//		x.MediaID=content[MediaIDField].(string)
+//		x.Format=content[FormatField].(string)
+//		x.
+//		err := xml.Unmarshal(body, &x)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &x, nil
+//
+//	case MessageTypeVideo:
+//		var x rxVideoMessageSpecifics
+//		err := xml.Unmarshal(body, &x)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &x, nil
+//
+//	case MessageTypeLocation:
+//		var x rxLocationMessageSpecifics
+//		err := xml.Unmarshal(body, &x)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &x, nil
+//
+//	case MessageTypeLink:
+//		var x rxLinkMessageSpecifics
+//		err := xml.Unmarshal(body, &x)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &x, nil
+//	case MessageTypeShortVideo:
+//		var x rxShortVideoMessageSpecifics
+//		err := xml.Unmarshal(body, &x)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &x, nil
+//	default:
+//		return nil, fmt.Errorf("unknown message type '%s'", ty)
+//
+//	}
+//}
+
 // TextMessageExtras 文本消息的参数。
 type TextMessageExtras interface {
 	messageKind
 
 	// GetContent 返回文本消息的内容。
 	GetContent() string
+	SetContent(string)
 }
 
 var _ TextMessageExtras = (*rxTextMessageSpecifics)(nil)
@@ -87,9 +147,23 @@ var _ TextMessageExtras = (*rxTextMessageSpecifics)(nil)
 func (r *rxTextMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "Content: %#v", r.Content)
 }
-
+func (r *rxTextMessageSpecifics) MessageMarshal() ([]byte, error) {
+	x := prTextMessageSpecifics{
+		Content: cdataNode{r.Content},
+	}
+	marshal, err := xml.Marshal(x)
+	if err != nil {
+		return nil, err
+	}
+	// 去除<xml></xml>
+	marshal = marshal[5 : len(marshal)-6 : len(marshal)-6]
+	return marshal, nil
+}
 func (r *rxTextMessageSpecifics) GetContent() string {
 	return r.Content
+}
+func (r *rxTextMessageSpecifics) SetContent(content string) {
+	r.Content = content
 }
 
 // ImageMessageExtras 图片消息的参数。
@@ -110,7 +184,9 @@ var _ ImageMessageExtras = (*rxImageMessageSpecifics)(nil)
 func (r *rxImageMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "PicURL: %#v, MediaID: %#v", r.PicURL, r.MediaID)
 }
-
+func (r *rxImageMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxImageMessageSpecifics) GetPicURL() string {
 	return r.PicURL
 }
@@ -134,6 +210,9 @@ type VoiceMessageExtras interface {
 
 var _ VoiceMessageExtras = (*rxVoiceMessageSpecifics)(nil)
 
+func (r *rxVoiceMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxVoiceMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "MediaID: %#v, Format: %#v", r.MediaID, r.Format)
 }
@@ -163,6 +242,9 @@ type VideoMessageExtras interface {
 
 var _ VideoMessageExtras = (*rxVideoMessageSpecifics)(nil)
 
+func (r *rxVideoMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxVideoMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "MediaID: %#v, ThumbMediaID: %#v", r.MediaID, r.ThumbMediaID)
 }
@@ -177,6 +259,9 @@ func (r *rxVideoMessageSpecifics) GetThumbMediaID() string {
 
 var _ VideoMessageExtras = (*rxShortVideoMessageSpecifics)(nil)
 
+func (r *rxShortVideoMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxShortVideoMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(w, "MediaID: %#v, ThumbMediaID: %#v", r.MediaID, r.ThumbMediaID)
 }
@@ -211,6 +296,9 @@ type LocationMessageExtras interface {
 
 var _ LocationMessageExtras = (*rxLocationMessageSpecifics)(nil)
 
+func (r *rxLocationMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxLocationMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(
 		w,
@@ -254,6 +342,9 @@ type LinkMessageExtras interface {
 
 var _ LinkMessageExtras = (*rxLinkMessageSpecifics)(nil)
 
+func (r *rxLinkMessageSpecifics) MessageMarshal() ([]byte, error) {
+	panic("")
+}
 func (r *rxLinkMessageSpecifics) formatInto(w io.Writer) {
 	_, _ = fmt.Fprintf(
 		w,

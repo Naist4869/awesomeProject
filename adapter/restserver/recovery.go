@@ -38,7 +38,7 @@ func Recovery() HandlerFunc {
 					if brokenPipe {
 						log.BaseLogger.Error("[Recovery] broken connection", zap.Error(err.(error)), zap.String("request:", string(httpRequest)))
 					} else {
-						log.BaseLogger.DPanic("[Recovery] panic recovered", zap.Error(err.(error)), zap.Stack(""))
+						log.BaseLogger.DPanic("[Recovery] panic recovered", zap.Error(err.(error)), zap.Stack("栈"))
 					}
 				}
 

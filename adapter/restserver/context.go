@@ -117,6 +117,12 @@ func (c *Context) GetString(key string) (s string) {
 	}
 	return
 }
+func (c *Context) GetBytes(key string) (b []byte) {
+	if val, ok := c.Get(key); ok && val != nil {
+		b, _ = val.([]byte)
+	}
+	return
+}
 
 // GetBool returns the value associated with the key as a boolean.
 func (c *Context) GetBool(key string) (b bool) {

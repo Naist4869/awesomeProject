@@ -15,5 +15,5 @@
 # vendor/
 .idea/
 .vscode/
-.logs/
 ./config/config.yaml
+./logs

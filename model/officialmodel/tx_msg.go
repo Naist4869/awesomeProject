@@ -16,7 +16,11 @@ type viewTextMessage struct {
 	MsgType      cdataNode `xml:"MsgType"`
 	Content      cdataNode `xml:"Content"`
 }
-type xmlRxEncryptEnvelope struct {
-	ToUserName string `xml:"ToUserName"`
-	Encrypt    string `xml:"Encrypt"`
+
+type xmlTxEnvelope struct {
+	XMLName      xml.Name `xml:"xml"`
+	Encrypt      string   `xml:"Encrypt"`
+	MsgSignature string   `xml:"MsgSignature"`
+	Timestamp    int64    `xml:"TimeStamp"`
+	Nonce        string   `xml:"Nonce"`
 }

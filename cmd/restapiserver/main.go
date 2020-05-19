@@ -8,6 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Naist4869/awesomeProject/model"
+	"github.com/Naist4869/awesomeProject/usecase"
+
 	"github.com/Naist4869/log"
 	"go.uber.org/zap"
 
@@ -55,7 +58,19 @@ func runServer(sc *servicecontainer.ServiceContainer) error {
 	})
 	wx := sc.AppConfig.UseCase.OfficialWx
 	ginlogger := log.BaseLogger.With(zap.String("模块", "HTTP"))
-	s := restserver.NewServer(wx.OriID, wx.AppID, wx.Token, wx.Base64AESKey, ginlogger, server.Group("app"))
+	useCase, err := getOfficialWxUseCase(sc)
+	if err != nil {
+		return err
+	}
+	s := restserver.NewServer(wx.OriID, wx.AppID, wx.Token, wx.Base64AESKey, ginlogger, useCase, server.Group("app"))
 	s.Http()
 	return server.Start()
+}
+func getOfficialWxUseCase(c container.Container) (usecase.IOfficialWx, error) {
+	key := model.OfficialWx
+	value, err := c.BuildUseCase(key)
+	if err != nil {
+		return nil, fmt.Errorf("getOfficialWxUseCase:%w", err)
+	}
+	return value.(usecase.IOfficialWx), nil
 }

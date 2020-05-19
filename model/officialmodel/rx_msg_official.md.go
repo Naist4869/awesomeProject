@@ -2,6 +2,8 @@
 
 package officialmodel
 
+import "encoding/xml"
+
 // rxMessageCommon 接收消息的公共部分
 type rxMessageCommon struct {
 	// ToUserName 开发者微信号
@@ -12,6 +14,22 @@ type rxMessageCommon struct {
 	CreateTime int64 `xml:"CreateTime"`
 	// MsgType 消息类型，文本为text
 	MsgType MessageType `xml:"MsgType"`
+	// MsgID 消息id，64位整
+	MsgID int64 `xml:"MsgId"`
+}
+
+// prMessageCommon 接收消息的公共部分
+type prMessageCommon struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// ToUserName 开发者微信号
+	ToUserName cdataNode `xml:"ToUserName"`
+	// FromUserName 发送方帐号（一个OpenID）
+	FromUserName cdataNode `xml:"FromUserName"`
+	// CreateTime 消息创建时间 （整型）
+	CreateTime int64 `xml:"CreateTime"`
+	// MsgType 消息类型，文本为text
+	MsgType cdataNode `xml:"MsgType"`
 	// MsgID 消息id，64位整
 	MsgID int64 `xml:"MsgId"`
 }
@@ -40,10 +58,33 @@ const MessageTypeLocation MessageType = "location"
 // MessageTypeLink 链接消息
 const MessageTypeLink MessageType = "link"
 
+const (
+	ContentField      = "Content"
+	PicURLField       = "PicUrl"
+	MediaIDField      = "MediaId"
+	FormatField       = "Format"
+	ThumbMediaIDField = "ThumbMediaId"
+	LatField          = "Location_X"
+	LonField          = "Location_Y"
+	ScaleField        = "Scale"
+	LabelField        = "Label"
+	TitleField        = "Title"
+	DescriptionField  = "Description"
+	URLField          = "Url"
+)
+
 // rxTextMessageSpecifics 接收的文本消息，特有字段
 type rxTextMessageSpecifics struct {
 	// Content 文本消息内容
 	Content string `xml:"Content"`
+}
+
+// prTextMessageSpecifics 接收的文本消息，特有字段
+type prTextMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// Content 文本消息内容
+	Content cdataNode `xml:"Content"`
 }
 
 // rxImageMessageSpecifics 接收的图片消息，特有字段
@@ -54,12 +95,32 @@ type rxImageMessageSpecifics struct {
 	MediaID string `xml:"MediaId"`
 }
 
+// prImageMessageSpecifics 接收的图片消息，特有字段
+type prImageMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// PicURL 图片链接（由系统生成）
+	PicURL cdataNode `xml:"PicUrl"`
+	// MediaID 图片媒体文件id，可以调用获取媒体文件接口拉取，仅三天内有效
+	MediaID cdataNode `xml:"MediaId"`
+}
+
 // rxVoiceMessageSpecifics 接收的语音消息，特有字段
 type rxVoiceMessageSpecifics struct {
 	// MediaID 语音媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
 	MediaID string `xml:"MediaId"`
 	// Format 语音格式，如amr，speex等
 	Format string `xml:"Format"`
+}
+
+// prVoiceMessageSpecifics 接收的语音消息，特有字段
+type prVoiceMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// MediaID 语音媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	MediaID cdataNode `xml:"MediaId"`
+	// Format 语音格式，如amr，speex等
+	Format cdataNode `xml:"Format"`
 }
 
 // rxVideoMessageSpecifics 接收的视频消息，特有字段
@@ -70,12 +131,32 @@ type rxVideoMessageSpecifics struct {
 	ThumbMediaID string `xml:"ThumbMediaId"`
 }
 
+// prVideoMessageSpecifics 接收的视频消息，特有字段
+type prVideoMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	MediaID cdataNode `xml:"MediaId"`
+	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	ThumbMediaID cdataNode `xml:"ThumbMediaId"`
+}
+
 // rxShortVideoMessageSpecifics 接收的小视频消息，特有字段
 type rxShortVideoMessageSpecifics struct {
 	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
 	MediaID string `xml:"MediaId"`
 	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
 	ThumbMediaID string `xml:"ThumbMediaId"`
+}
+
+// prShortVideoMessageSpecifics 接收的小视频消息，特有字段
+type prShortVideoMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	MediaID cdataNode `xml:"MediaId"`
+	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	ThumbMediaID cdataNode `xml:"ThumbMediaId"`
 }
 
 // rxLocationMessageSpecifics 接收的位置消息，特有字段
@@ -90,6 +171,20 @@ type rxLocationMessageSpecifics struct {
 	Label string `xml:"Label"`
 }
 
+// prLocationMessageSpecifics 接收的位置消息，特有字段
+type prLocationMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// Lat 地理位置纬度
+	Lat float64 `xml:"Location_X"`
+	// Lon 地理位置经度
+	Lon float64 `xml:"Location_Y"`
+	// Scale 地图缩放大小
+	Scale int `xml:"Scale"`
+	// Label 地理位置信息
+	Label cdataNode `xml:"Label"`
+}
+
 // rxLinkMessageSpecifics 接收的链接消息，特有字段
 type rxLinkMessageSpecifics struct {
 	// Title 标题
@@ -98,4 +193,16 @@ type rxLinkMessageSpecifics struct {
 	Description string `xml:"Description"`
 	// URL 链接跳转的url
 	URL string `xml:"Url"`
+}
+
+// prLinkMessageSpecifics 接收的链接消息，特有字段
+type prLinkMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xml.Name `xml:"xml"`
+	// Title 标题
+	Title cdataNode `xml:"Title"`
+	// Description 描述
+	Description cdataNode `xml:"Description"`
+	// URL 链接跳转的url
+	URL cdataNode `xml:"Url"`
 }

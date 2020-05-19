@@ -3,19 +3,21 @@ package pkcs7
 import "fmt"
 
 const (
-	BlockSize  = 32            // PKCS#7
-	BLOCK_MASK = BlockSize - 1 // BLOCK_SIZE 为 2^n 时, 可以用 mask 获取针对 BLOCK_SIZE 的余数
+	BlockSize = 32            // PKCS#7
+	BlockMask = BlockSize - 1 // BLOCK_SIZE 为 2^n 时, 可以用 mask 获取针对 BLOCK_SIZE 的余数
 )
 
-func Pad(x []byte) []byte {
-	numPadBytes := 32 - len(x)%32
-	padByte := byte(numPadBytes)
-	tmp := make([]byte, len(x)+numPadBytes)
-	copy(tmp, x)
-	for i := 0; i < numPadBytes; i++ {
-		tmp[len(x)+i] = padByte
+func Pad(rawXMLMsg []byte, appId string) (int, []byte) {
+	appIdOffset := 20 + len(rawXMLMsg)
+	contentLen := appIdOffset + len(appId)
+	amountToPad := BlockSize - contentLen&BlockMask
+	plaintextLen := contentLen + amountToPad
+	plaintext := make([]byte, plaintextLen)
+	// PKCS#7 补位
+	for i := contentLen; i < plaintextLen; i++ {
+		plaintext[i] = byte(amountToPad)
 	}
-	return tmp
+	return appIdOffset, plaintext
 }
 
 func Unpad(x []byte) ([]byte, error) {

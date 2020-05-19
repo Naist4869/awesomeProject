@@ -57,3 +57,6 @@ type IWorkWx interface {
 	//发送 Markdown 消息
 	SendMarkdownMessage(recipient *wxmodel.Recipient, content string, isSafe bool) error
 }
+type IOfficialWx interface {
+	ReplyMessage(xmlMsg []byte) (reply string, err error)
+}

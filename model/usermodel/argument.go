@@ -2,6 +2,8 @@ package usermodel
 
 import (
 	"time"
+
+	"github.com/Naist4869/awesomeProject/model"
 )
 
 const (
@@ -25,10 +27,10 @@ type RegisterArgument struct {
 
 func (a RegisterArgument) Validate() error {
 	if a.Phone == "" {
-		return ErrUserPhoneEmpty
+		return model.ErrUserPhoneEmpty
 	}
 	if a.NickName == "" {
-		return ErrUserNickNameEmpty
+		return model.ErrUserNickNameEmpty
 	}
 	return nil
 }

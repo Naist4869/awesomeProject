@@ -9,10 +9,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 	"unsafe"
+
+	"github.com/Naist4869/awesomeProject/usecase"
 
 	"go.uber.org/zap"
 
@@ -33,6 +38,8 @@ type Server struct {
 	aesKeyBucketPtrMutex sync.Mutex     // used only by writers
 	aesKeyBucketPtr      unsafe.Pointer // *aesKeyBucket
 	handler              IRouter        // http句柄
+
+	wx usecase.IOfficialWx
 
 	logger *log.Logger
 }
@@ -61,33 +68,21 @@ type aesKeyBucket struct {
 //  base64AESKey: 可选; aes加密解密key, 43字节长(base64编码, 去掉了尾部的'='), 安全模式必须设置;
 //  handler:      必须; 处理微信服务器推送过来的消息(事件)的Handler;
 //  errorHandler: 可选; 用于处理Server在处理消息(事件)过程中产生的错误, 如果没有设置则默认使用 DefaultErrorHandler.
-func NewServer(oriId, appId, token, base64AESKey string, logger *log.Logger, handler IRouter) *Server {
-	if token == "" {
-		panic("empty token")
+func NewServer(oriId, appId, token, base64AESKey string, logger *log.Logger, useCaseImpl usecase.IOfficialWx, handler IRouter) *Server {
+	s := &Server{
+		oriId:   oriId,
+		appId:   appId,
+		handler: handler,
+		wx:      useCaseImpl,
+		logger:  logger,
 	}
-
-	var (
-		aesKey []byte
-		err    error
-	)
-	if base64AESKey != "" {
-		if len(base64AESKey) != 43 {
-			panic("the length of base64AESKey must equal to 43")
-		}
-		aesKey, err = base64.StdEncoding.DecodeString(base64AESKey + "=")
-		if err != nil {
-			panic(fmt.Sprintf("Decode base64AESKey:%s failed", base64AESKey))
-		}
+	if err := s.SetAESKey(base64AESKey); err != nil {
+		panic(err)
 	}
-
-	return &Server{
-		oriId:           oriId,
-		appId:           appId,
-		tokenBucketPtr:  unsafe.Pointer(&tokenBucket{currentToken: token}),
-		aesKeyBucketPtr: unsafe.Pointer(&aesKeyBucket{currentAESKey: aesKey}),
-		handler:         handler,
-		logger:          logger,
+	if err := s.SetToken(token); err != nil {
+		panic(err)
 	}
+	return s
 }
 func (s *Server) getToken() (currentToken, lastToken string) {
 	if p := (*tokenBucket)(atomic.LoadPointer(&s.tokenBucketPtr)); p != nil {
@@ -240,168 +235,264 @@ func (s *Server) Verify(c *Context) {
 	encryptType := query.Get("encrypt_type")
 	switch encryptType {
 	case "aes":
-		haveSignature := []byte(query.Get("signature"))
-		if len(haveSignature) == 0 {
-			c.Error(errors.New("not found signature query parameter"))
+		if !s.aesVerity(c, query) {
 			return
 		}
-		haveMsgSignature := []byte(query.Get("msg_signature"))
-		if len(haveMsgSignature) == 0 {
-			c.Error(errors.New("not found msg_signature query parameter"))
-			return
-		}
-		timestamp := query.Get("timestamp")
-		if timestamp == "" {
-			c.Error(errors.New("not found timestamp query parameter"))
-			return
-		}
-		nonce := query.Get("nonce")
-		if nonce == "" {
-			c.Error(errors.New("not found nonce query parameter"))
-			return
-		}
-		var token string
-		currentToken, lastToken := s.getToken()
-		if currentToken == "" {
-			c.Error(errors.New("token was not set for Server, see NewServer function or Server.SetToken method"))
-			return
-		}
-		token = currentToken
-		wantSignature := []byte(Sign(token, timestamp, nonce))
-		if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
-			if lastToken == "" {
-				c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
-				return
-			}
-			token = lastToken
-			wantSignature = []byte(Sign(token, timestamp, nonce))
-			if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
-				c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
-				return
-			}
-		} else if lastToken != "" {
-			s.removeLastToken(lastToken)
-		}
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			c.Error(errors.New("read request body fail"))
-			return
-		}
-		defer c.Request.Body.Close()
-		data := &xmlRxEnvelope{}
-		if err := xml.Unmarshal(body, data); err != nil {
-			c.Error(errors.New("xmlRxEnvelope unmarshal fail"))
-			return
-		}
-		haveToUserName := data.ToUserName
-		wantToUserName := s.oriId
-		if strings.Compare(haveToUserName, wantToUserName) != 0 {
-			c.Error(fmt.Errorf("the message ToUserName mismatch, have: %s, want: %s",
-				haveToUserName, wantToUserName))
-			return
-		}
-		wantMsgSignature := []byte(Sign(token, timestamp, nonce, data.Encrypt))
-		if subtle.ConstantTimeCompare(haveMsgSignature, wantMsgSignature) != 1 {
-			c.Error(fmt.Errorf("check msg_signature failed, have: %s, want: %s", haveMsgSignature, wantMsgSignature))
-			return
-		}
-		var aesKey []byte
-		currentAESKey, lastAESKey := s.getAESKey()
-		if currentAESKey == nil {
-			c.Error(errors.New("aes key was not set for Server, see NewServer function or Server.SetAESKey method"))
-			return
-		}
-		aesKey = currentAESKey
-		random, xmlMsg, haveAppIdBytes, err := AESDecryptMsg(tool.StrToBytes(data.Encrypt), aesKey)
-		if err != nil {
-			if lastAESKey == nil {
-				c.Error(err)
-				return
-			}
-			aesKey = lastAESKey
-			random, xmlMsg, haveAppIdBytes, err = AESDecryptMsg(tool.StrToBytes(data.Encrypt), aesKey)
-			if err != nil {
-				c.Error(err)
-				return
-			}
-		} else {
-			if lastAESKey != nil {
-				s.removeLastAESKey(lastAESKey)
-			}
-		}
-		wantAppId := s.appId
-		haveAppId := string(haveAppIdBytes)
-		if len(wantAppId) != 0 && strings.Compare(haveAppId, wantAppId) != 0 {
-			c.Error(fmt.Errorf("the message AppId mismatch, have: %s, want: %s", haveAppId, wantAppId))
-			return
-		}
-		c.Set("random", random)
-		c.Set("xmlMsg", xmlMsg)
 	case "", "raw":
-		haveSignature := []byte(query.Get("signature"))
-		if len(haveSignature) == 0 {
-			c.Error(errors.New("not found signature query parameter"))
+		if !s.rawVerity(c, query) {
 			return
 		}
-		timestamp := query.Get("timestamp")
-		if timestamp == "" {
-			c.Error(errors.New("not found timestamp query parameter"))
-			return
-		}
-		nonce := query.Get("nonce")
-		if nonce == "" {
-			c.Error(errors.New("not found nonce query parameter"))
-			return
-		}
-		var token string
-		currentToken, lastToken := s.getToken()
-		if currentToken == "" {
-			c.Error(errors.New("token was not set for Server, see NewServer function or Server.SetToken method"))
-			return
-		}
-		token = currentToken
-		wantSignature := []byte(Sign(token, timestamp, nonce))
-		if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
-			if lastToken == "" {
-				c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
-				return
-			}
-			token = lastToken
-			wantSignature = []byte(Sign(token, timestamp, nonce))
-			if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
-				c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
-				return
-			}
-		} else if lastToken != "" {
-			s.removeLastToken(lastToken)
-		}
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			c.Error(errors.New("read request body fail"))
-			return
-		}
-		defer c.Request.Body.Close()
-		c.Set("xmlMsg", body)
+
 	default:
 		c.Error(errors.New("unknown encrypt_type: " + encryptType))
 		return
 	}
 }
-func (s *Server) UseCase(c *Context) {
-	xmlMsg, exists := c.Get("xmlMsg")
-	if !exists {
-		// view
+
+func (s *Server) rawVerity(c *Context, query url.Values) bool {
+	haveSignature := []byte(query.Get("signature"))
+	if len(haveSignature) == 0 {
+		c.Error(errors.New("not found signature query parameter"))
+		return true
+	}
+	timestamp := query.Get("timestamp")
+	if timestamp == "" {
+		c.Error(errors.New("not found timestamp query parameter"))
+		return true
+	}
+	nonce := query.Get("nonce")
+	if nonce == "" {
+		c.Error(errors.New("not found nonce query parameter"))
+		return true
+	}
+	var token string
+	currentToken, lastToken := s.getToken()
+	if currentToken == "" {
+		c.Error(errors.New("token was not set for Server, see NewServer function or Server.SetToken method"))
+		return true
+	}
+	token = currentToken
+	wantSignature := []byte(Sign(token, timestamp, nonce))
+	if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
+		if lastToken == "" {
+			c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
+			return true
+		}
+		token = lastToken
+		wantSignature = []byte(Sign(token, timestamp, nonce))
+		if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
+			c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
+			return true
+		}
+	} else if lastToken != "" {
+		s.removeLastToken(lastToken)
+	}
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.Error(errors.New("read request body fail"))
+		return true
+	}
+	defer c.Request.Body.Close()
+	c.Set("xmlMsg", body)
+	c.Set("token", token)
+	return false
+}
+
+func (s *Server) aesVerity(c *Context, query url.Values) (ok bool) {
+	haveSignature := []byte(query.Get("signature"))
+	if len(haveSignature) == 0 {
+		c.Error(errors.New("not found signature query parameter"))
 		return
 	}
-	c.Get("random")
-	s.logger.Info("收到消息", zap.ByteString("XML消息", xmlMsg.([]byte)))
+	haveMsgSignature := []byte(query.Get("msg_signature"))
+	if len(haveMsgSignature) == 0 {
+		c.Error(errors.New("not found msg_signature query parameter"))
+		return
+	}
+	timestamp := query.Get("timestamp")
+	if timestamp == "" {
+		c.Error(errors.New("not found timestamp query parameter"))
+		return
+	}
+	nonce := query.Get("nonce")
+	if nonce == "" {
+		c.Error(errors.New("not found nonce query parameter"))
+		return
+	}
+	var token string
+	currentToken, lastToken := s.getToken()
+	if currentToken == "" {
+		c.Error(errors.New("token was not set for Server, see NewServer function or Server.SetToken method"))
+		return
+	}
+	token = currentToken
+	wantSignature := []byte(Sign(token, timestamp, nonce))
+	if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
+		if lastToken == "" {
+			c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
+			return
+		}
+		token = lastToken
+		wantSignature = []byte(Sign(token, timestamp, nonce))
+		if subtle.ConstantTimeCompare(haveSignature, wantSignature) != 1 {
+			c.Error(fmt.Errorf("check signature failed, have: %s, want: %s", haveSignature, wantSignature))
+			return
+		}
+	} else if lastToken != "" {
+		s.removeLastToken(lastToken)
+	}
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.Error(errors.New("read request body fail"))
+		return
+	}
+	defer c.Request.Body.Close()
+	data := &xmlRxEncryptEnvelope{}
+	if err := xml.Unmarshal(body, data); err != nil {
+		c.Error(errors.New("xmlRxEnvelope unmarshal fail"))
+		return
+	}
+	haveToUserName := data.ToUserName
+	wantToUserName := s.oriId
+	if strings.Compare(haveToUserName, wantToUserName) != 0 {
+		c.Error(fmt.Errorf("the message ToUserName mismatch, have: %s, want: %s",
+			haveToUserName, wantToUserName))
+		return
+	}
+	wantMsgSignature := []byte(Sign(token, timestamp, nonce, data.Encrypt))
+	if subtle.ConstantTimeCompare(haveMsgSignature, wantMsgSignature) != 1 {
+		c.Error(fmt.Errorf("check msg_signature failed, have: %s, want: %s", haveMsgSignature, wantMsgSignature))
+		return
+	}
+	var aesKey []byte
+	currentAESKey, lastAESKey := s.getAESKey()
+	if currentAESKey == nil {
+		c.Error(errors.New("aes key was not set for Server, see NewServer function or Server.SetAESKey method"))
+		return
+	}
+	aesKey = currentAESKey
+	random, xmlMsg, haveAppIdBytes, err := AESDecryptMsg(tool.StrToBytes(data.Encrypt), aesKey)
+	if err != nil {
+		if lastAESKey == nil {
+			c.Error(err)
+			return
+		}
+		aesKey = lastAESKey
+		random, xmlMsg, haveAppIdBytes, err = AESDecryptMsg(tool.StrToBytes(data.Encrypt), aesKey)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+	} else {
+		if lastAESKey != nil {
+			s.removeLastAESKey(lastAESKey)
+		}
+	}
+	wantAppId := s.appId
+	haveAppId := string(haveAppIdBytes)
+	if len(wantAppId) != 0 && strings.Compare(haveAppId, wantAppId) != 0 {
+		c.Error(fmt.Errorf("the message AppId mismatch, have: %s, want: %s", haveAppId, wantAppId))
+		return
+	}
+	c.Set("random", random)
+	c.Set("xmlMsg", xmlMsg)
+	c.Set("aesKey", aesKey)
+	c.Set("token", token)
+	ok = true
+	return
+}
+func (s *Server) UseCase(c *Context) {
+	var (
+		err          error
+		replyMessage string
+		signature    string
+		ok           bool
+	)
+	encrypt, xmlMsg, token, random, aesKey, e := s.prepare(c)
+	if e != nil {
+		//todo view
+		return
+	}
+	s.logger.Info("回复消息", zap.ByteString("收到消息", xmlMsg), zap.Bool("是否需要加密回复", encrypt))
+	replyMessage, err = s.wx.ReplyMessage(xmlMsg)
+	if err != nil {
+		s.logger.Error("回复消息", zap.Error(err))
+		return
+	}
+	s.logger.Info("回复消息", zap.String("回复消息", replyMessage))
+	nonce := makeNonce()
+	unix := time.Now().Unix()
+	timestamp := strconv.FormatInt(unix, 10)
+	if !encrypt {
+		signature = Sign(token, timestamp, nonce)
+		c.Bytes(http.StatusOK, "application/xml; charset=utf-8", []byte(replyMessage))
+		return
+	}
+	replyMessage, signature, ok = s.encryptMessage(random, replyMessage, aesKey, signature, token, timestamp, nonce)
+	if !ok {
+		//todo view
+		return
+	}
+	envelope := &xmlTxEncryptEnvelope{
+		Encrypt:      replyMessage,
+		MsgSignature: signature,
+		Timestamp:    unix,
+		Nonce:        nonce,
+	}
+	c.XML(http.StatusOK, envelope)
 }
 
-type xmlRxEnvelope struct {
+func (s *Server) encryptMessage(random []byte, replyMessage string, aesKey []byte, signature string, token string, timestamp string, nonce string) (string, string, bool) {
+	base64EncryptedMsg, err := AESEncryptMsg(random, []byte(replyMessage), s.appId, aesKey)
+	if err != nil {
+		s.logger.Error("加密消息错误", zap.Error(err))
+		return "", "", false
+	}
+	replyMessage = base64EncryptedMsg
+	signature = Sign(token, timestamp, nonce, replyMessage)
+	return replyMessage, signature, true
+}
+
+func (s *Server) prepare(c *Context) (encrypt bool, xmlMsg []byte, token string, random []byte, aesKey []byte, err error) {
+	encrypt = true
+	if xm, exists := c.Get("xmlMsg"); !exists {
+		err = errors.New("缺少必要参数")
+		return
+	} else {
+		xmlMsg = xm.([]byte)
+	}
+
+	if t, exists := c.Get("token"); !exists {
+		err = errors.New("缺少必要参数")
+		return
+	} else {
+		token = t.(string)
+
+	}
+
+	if r, exists := c.Get("random"); !exists {
+		encrypt = false
+	} else {
+		random = r.([]byte)
+
+	}
+
+	if ak, exists := c.Get("aesKey"); !exists {
+		encrypt = false
+	} else {
+		aesKey = ak.([]byte)
+	}
+	return
+}
+
+type xmlTxEncryptEnvelope struct {
+	XMLName      xml.Name `xml:"xml"`
+	Encrypt      string   `xml:"Encrypt"`
+	MsgSignature string   `xml:"MsgSignature"`
+	Timestamp    int64    `xml:"TimeStamp"`
+	Nonce        string   `xml:"Nonce"`
+}
+type xmlRxEncryptEnvelope struct {
 	ToUserName string `xml:"ToUserName"`
 	Encrypt    string `xml:"Encrypt"`
-}
-
-type EnvelopeHandler interface {
-	OnIncomingEnvelope(xmlMsg []byte) error
 }

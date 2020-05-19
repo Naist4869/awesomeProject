@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Naist4869/awesomeProject/model"
+
 	"github.com/Naist4869/awesomeProject/dataservice"
 
 	"github.com/Naist4869/awesomeProject/api/handler"
-
-	"github.com/Naist4869/awesomeProject/model/usermodel"
 )
 
 var jsonContentType = []string{"application/json; charset=utf-8"}
@@ -37,11 +37,11 @@ type Response struct {
 type View struct{}
 
 var ErrHTTPStatusMap = map[string]int{
-	usermodel.ErrUserPhoneEmpty.Error():    http.StatusBadRequest,
-	usermodel.ErrUserNickNameEmpty.Error(): http.StatusBadRequest,
-	handler.ErrMethodNotAllowed.Error():    http.StatusBadRequest,
-	dataservice.ErrInsertFailed.Error():    http.StatusInternalServerError,
-	dataservice.ErrPhoneExists.Error():     http.StatusConflict,
+	model.ErrUserPhoneEmpty.Error():     http.StatusBadRequest,
+	model.ErrUserNickNameEmpty.Error():  http.StatusBadRequest,
+	handler.ErrMethodNotAllowed.Error(): http.StatusBadRequest,
+	dataservice.ErrInsertFailed.Error(): http.StatusInternalServerError,
+	dataservice.ErrPhoneExists.Error():  http.StatusConflict,
 	// pkg.ErrNotFound.Error():     http.StatusNotFound,
 	// pkg.ErrInvalidSlug.Error():  http.StatusBadRequest,
 	// pkg.ErrExists.Error():       http.StatusConflict,

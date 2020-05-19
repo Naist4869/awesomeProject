@@ -29,6 +29,7 @@ const (
 	LIST_USER    string = "listUser"
 	LIST_COURSE  string = "listCourse"
 	WORKWX       string = "workWx"
+	OfficialWx   string = "officialWx"
 )
 const (
 	Prometheus string = "prometheus"
