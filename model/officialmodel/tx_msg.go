@@ -24,3 +24,4 @@ type xmlTxEnvelope struct {
 	Timestamp    int64    `xml:"TimeStamp"`
 	Nonce        string   `xml:"Nonce"`
 }
+type xmlName = xml.Name

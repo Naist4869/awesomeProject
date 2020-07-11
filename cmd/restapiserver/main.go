@@ -48,7 +48,11 @@ func buildContainer() (*servicecontainer.ServiceContainer, error) {
 	}
 	return &c, nil
 }
-func runServer(sc *servicecontainer.ServiceContainer) error {
+func runServer(sc *servicecontainer.ServiceContainer) (err error) {
+	var (
+		useCase    usecase.IOfficialWx
+		apiUseCase usecase.IAPI
+	)
 	server := restserver.DefaultServer(&restserver.ServerConfig{
 		Network:      "tcp",
 		Addr:         "127.0.0.1:1237",
@@ -56,14 +60,25 @@ func runServer(sc *servicecontainer.ServiceContainer) error {
 		ReadTimeout:  time.Second * 5,
 		WriteTimeout: time.Second * 5,
 	})
+
 	wx := sc.AppConfig.UseCase.OfficialWx
+	api := sc.AppConfig.UseCase.ApiUseCase
 	ginlogger := log.BaseLogger.With(zap.String("模块", "HTTP"))
-	useCase, err := getOfficialWxUseCase(sc)
+	useCase, err = getOfficialWxUseCase(sc)
 	if err != nil {
 		return err
 	}
-	s := restserver.NewServer(wx.OriID, wx.AppID, wx.Token, wx.Base64AESKey, ginlogger, useCase, server.Group("app"))
-	s.Http()
+	apiUseCase, err = getApiUseCase(sc)
+	if err != nil {
+		return err
+	}
+	s := restserver.NewServer(wx.OriID, wx.AppID, wx.Token, wx.Base64AESKey, wx.Secret, ginlogger, useCase, server.Group("app"))
+	apiServer := restserver.NewApiServer(apiUseCase, api.Limit, server.Group("api"))
+	for _, eachApi := range s.HTTPApis() {
+		if err := apiServer.Register(eachApi); err != nil {
+			log.BaseLogger.Fatal("注册API失败", zap.Error(err))
+		}
+	}
 	return server.Start()
 }
 func getOfficialWxUseCase(c container.Container) (usecase.IOfficialWx, error) {
@@ -73,4 +88,12 @@ func getOfficialWxUseCase(c container.Container) (usecase.IOfficialWx, error) {
 		return nil, fmt.Errorf("getOfficialWxUseCase:%w", err)
 	}
 	return value.(usecase.IOfficialWx), nil
+}
+func getApiUseCase(c container.Container) (usecase.IAPI, error) {
+	key := model.Api
+	value, err := c.BuildUseCase(key)
+	if err != nil {
+		return nil, fmt.Errorf("getOfficialWxUseCase:%w", err)
+	}
+	return value.(usecase.IAPI), nil
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/Naist4869/log"
@@ -38,7 +39,9 @@ func Recovery() HandlerFunc {
 					if brokenPipe {
 						log.BaseLogger.Error("[Recovery] broken connection", zap.Error(err.(error)), zap.String("request:", string(httpRequest)))
 					} else {
-						log.BaseLogger.DPanic("[Recovery] panic recovered", zap.Error(err.(error)), zap.Stack("栈"))
+						buf := make([]byte, 64<<10)
+						buf = buf[:runtime.Stack(buf, false)]
+						log.BaseLogger.DPanic("[Recovery] panic recovered", zap.Error(err.(error)), zap.ByteString("栈", buf))
 					}
 				}
 

@@ -17,6 +17,8 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/Naist4869/awesomeProject/api"
+
 	"github.com/Naist4869/awesomeProject/usecase"
 
 	"go.uber.org/zap"
@@ -37,7 +39,11 @@ type Server struct {
 
 	aesKeyBucketPtrMutex sync.Mutex     // used only by writers
 	aesKeyBucketPtr      unsafe.Pointer // *aesKeyBucket
-	handler              IRouter        // http句柄
+
+	secretBucketPtrMutex sync.Mutex     // used only by writers
+	secretBucketPtr      unsafe.Pointer // *secretBucket
+
+	handler IRouter // http句柄
 
 	wx usecase.IOfficialWx
 
@@ -49,6 +55,11 @@ func (s *Server) OriId() string {
 }
 func (s *Server) AppId() string {
 	return s.appId
+}
+
+type secretBucket struct {
+	currentSecret string
+	lastSecret    string
 }
 
 type tokenBucket struct {
@@ -68,7 +79,7 @@ type aesKeyBucket struct {
 //  base64AESKey: 可选; aes加密解密key, 43字节长(base64编码, 去掉了尾部的'='), 安全模式必须设置;
 //  handler:      必须; 处理微信服务器推送过来的消息(事件)的Handler;
 //  errorHandler: 可选; 用于处理Server在处理消息(事件)过程中产生的错误, 如果没有设置则默认使用 DefaultErrorHandler.
-func NewServer(oriId, appId, token, base64AESKey string, logger *log.Logger, useCaseImpl usecase.IOfficialWx, handler IRouter) *Server {
+func NewServer(oriId, appId, token, base64AESKey, secret string, logger *log.Logger, useCaseImpl usecase.IOfficialWx, handler IRouter) *Server {
 	s := &Server{
 		oriId:   oriId,
 		appId:   appId,
@@ -82,6 +93,10 @@ func NewServer(oriId, appId, token, base64AESKey string, logger *log.Logger, use
 	if err := s.SetToken(token); err != nil {
 		panic(err)
 	}
+	if err := s.SetSecret(secret); err != nil {
+		panic(err)
+	}
+	s.Http()
 	return s
 }
 func (s *Server) getToken() (currentToken, lastToken string) {
@@ -127,7 +142,48 @@ func (s *Server) removeLastToken(lastToken string) {
 	atomic.StorePointer(&s.tokenBucketPtr, unsafe.Pointer(&bucket))
 	return
 }
+func (s *Server) getSecret() (currentSecret, lastSecret string) {
+	if p := (*secretBucket)(atomic.LoadPointer(&s.secretBucketPtr)); p != nil {
+		return p.currentSecret, p.lastSecret
+	}
+	return
+}
 
+func (s *Server) SetSecret(secret string) (err error) {
+	if secret == "" {
+		return errors.New("empty secret")
+	}
+
+	s.secretBucketPtrMutex.Lock()
+	defer s.secretBucketPtrMutex.Unlock()
+
+	currentSecret, _ := s.getSecret()
+	if secret == currentSecret {
+		return
+	}
+
+	bucket := secretBucket{
+		currentSecret: secret,
+		lastSecret:    currentSecret,
+	}
+	atomic.StorePointer(&s.secretBucketPtr, unsafe.Pointer(&bucket))
+	return
+}
+func (s *Server) removeLastSecret(lastSecret string) {
+	s.secretBucketPtrMutex.Lock()
+	defer s.secretBucketPtrMutex.Unlock()
+
+	currentSecret2, lastSecret2 := s.getSecret()
+	if lastSecret != lastSecret2 {
+		return
+	}
+
+	bucket := secretBucket{
+		currentSecret: currentSecret2,
+	}
+	atomic.StorePointer(&s.secretBucketPtr, unsafe.Pointer(&bucket))
+	return
+}
 func (s *Server) getAESKey() (currentAESKey, lastAESKey []byte) {
 	if p := (*aesKeyBucket)(atomic.LoadPointer(&s.aesKeyBucketPtr)); p != nil {
 		return p.currentAESKey, p.lastAESKey
@@ -230,6 +286,11 @@ func (s *Server) Http() {
 	s.handler.GET("/callback", s.Signature)
 	s.handler.POST("/callback", s.Verify, s.UseCase)
 }
+
+func (s *Server) Router() IRouter {
+	return s.handler
+}
+
 func (s *Server) Verify(c *Context) {
 	query := c.Request.URL.Query()
 	encryptType := query.Get("encrypt_type")
@@ -484,6 +545,19 @@ func (s *Server) prepare(c *Context) (encrypt bool, xmlMsg []byte, token string,
 	}
 	return
 }
+func (s *Server) HTTPApis() []api.Api {
+	return []api.Api{
+		api.NewApi("获取Secret", api.APIGetSecret, func() interface{} {
+			return &SecretReq{}
+		}, func(argument interface{}, merchantID int64) (interface{}, error) {
+			secret, _ := s.getSecret()
+			return SecretResp{
+				AppID:  s.appId,
+				Secret: secret,
+			}, nil
+		}),
+	}
+}
 
 type xmlTxEncryptEnvelope struct {
 	XMLName      xml.Name `xml:"xml"`
@@ -495,4 +569,10 @@ type xmlTxEncryptEnvelope struct {
 type xmlRxEncryptEnvelope struct {
 	ToUserName string `xml:"ToUserName"`
 	Encrypt    string `xml:"Encrypt"`
+}
+type SecretResp struct {
+	AppID  string `json:"appid"`
+	Secret string `json:"secret"`
+}
+type SecretReq struct {
 }

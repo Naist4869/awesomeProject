@@ -12,7 +12,8 @@ type ErrorType int64
 const (
 	ErrorTypeServer ErrorType = 1 << iota
 	ErrorTypeWxServer
-	ErrorTypeAny ErrorType = 1<<32 - 1
+	ErrorTypeBind ErrorType = 1 << 31
+	ErrorTypeAny  ErrorType = 1<<32 - 1
 )
 
 type Error struct {

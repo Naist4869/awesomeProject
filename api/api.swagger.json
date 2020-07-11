@@ -1,0 +1,265 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api.proto",
+    "version": "1"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "multipart/form-data"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/demo.service.v1.FileSystem/MediaIDGet": {
+      "get": {
+        "summary": "rpc CategoryGoodsGet(CategoryGoodsGetReq)returns(CategoryGoodsRespList){",
+        "description": "option (google.api.http) = {\n      get: \"/kratos-demo/categoryGoodsGet\"\n    };\n  };",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/.demo.service.v1.MediaIDResp"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "fakeID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "tags": [
+          "demo.service.v1.FileSystem"
+        ]
+      }
+    },
+    "/demo.service.v1.FileSystem/Ping": {
+      "get": {
+        "summary": "/demo.service.v1.FileSystem/Ping",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/.google.protobuf.Empty"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "demo.service.v1.FileSystem"
+        ]
+      }
+    },
+    "/demo.service.v1.TBK/KeyConvertKey": {
+      "get": {
+        "summary": "/demo.service.v1.TBK/KeyConvertKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/.demo.service.v1.KeyConvertKeyResp"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "FromKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "UserID",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "demo.service.v1.TBK"
+        ]
+      }
+    },
+    "/demo.service.v1.TBK/Ping": {
+      "get": {
+        "summary": "/demo.service.v1.TBK/Ping",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/.google.protobuf.Empty"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "demo.service.v1.TBK"
+        ]
+      }
+    },
+    "/demo.service.v1.TBK/TitleConvertTBKey": {
+      "get": {
+        "summary": "/demo.service.v1.TBK/TitleConvertTBKey",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "$ref": "#/definitions/.demo.service.v1.TitleConvertTBKeyResp"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Title",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "demo.service.v1.TBK"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    ".demo.service.v1.KeyConvertKeyReq": {
+      "type": "object",
+      "properties": {
+        "FromKey": {
+          "type": "string"
+        },
+        "UserID": {
+          "type": "string"
+        }
+      }
+    },
+    ".demo.service.v1.KeyConvertKeyResp": {
+      "type": "object",
+      "properties": {
+        "ToKey": {
+          "type": "string"
+        },
+        "Price": {
+          "type": "string"
+        },
+        "Rebate": {
+          "type": "string"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "PicURL": {
+          "type": "string"
+        }
+      }
+    },
+    ".demo.service.v1.MediaIDReq": {
+      "type": "object",
+      "properties": {
+        "fakeID": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "integer"
+        }
+      }
+    },
+    ".demo.service.v1.MediaIDResp": {
+      "type": "object",
+      "properties": {
+        "MediaID": {
+          "type": "string"
+        }
+      }
+    },
+    ".demo.service.v1.TitleConvertTBKeyReq": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        }
+      }
+    },
+    ".demo.service.v1.TitleConvertTBKeyResp": {
+      "type": "object",
+      "properties": {
+        "TBKey": {
+          "type": "string"
+        }
+      }
+    },
+    ".google.protobuf.Empty": {
+      "type": "object",
+      "properties": {},
+      "description": "A generic empty message that you can re-use to avoid defining duplicated\n empty messages in your APIs. A typical example is to use it as the request\n or the response type of an API method. For instance:\n\n     service Foo {\n       rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n     }\n\n The JSON representation for `Empty` is empty JSON object `{}`."
+    }
+  }
+}

@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"github.com/Naist4869/awesomeProject/api"
 	"github.com/Naist4869/awesomeProject/model"
+	"github.com/Naist4869/awesomeProject/model/apimodel"
 	"github.com/Naist4869/awesomeProject/model/usermodel"
 	"github.com/Naist4869/awesomeProject/model/wxmodel"
 )
@@ -59,4 +61,7 @@ type IWorkWx interface {
 }
 type IOfficialWx interface {
 	ReplyMessage(xmlMsg []byte) (reply string, err error)
+}
+type IAPI interface {
+	Handle(arg *apimodel.Argument, api api.Api) (interface{}, int, error)
 }

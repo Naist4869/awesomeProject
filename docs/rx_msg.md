@@ -55,6 +55,7 @@ Name|XML|Type|Doc
 :---|:--|:---|:--
 `MediaID`|`MediaId`|`string`|语音媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
 `Format`|`Format`|`string`|语音格式，如amr，speex等
+`Recognition`|`Recognition`|`string`|语音识别结果，UTF8编码
 
 ### `rxVideoMessageSpecifics` 接收的视频消息，特有字段
 

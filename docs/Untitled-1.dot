@@ -1,0 +1,25 @@
+digraph "testtitle" {
+node [style=filled fillcolor="#f8f8f8"]
+
+subgraph cluster_I {    
+    color=blue 
+    label = "团长1的团队"
+ N1 [label="团长1\n10 (10.00%)\nof 100 (100.00%)" id="node1" fontsize=30 shape=box tooltip="src (25)" color="#b23c00" fillcolor="#edddd5"]
+N1_0 [label = "用户1" id="N1_0" fontsize=8 shape=ellipse tooltip="10"]
+N1 -> N1_0 [label=" 5" weight=100 tooltip="10" labeltooltip="10"]
+NN1_0 [label = "用户2" id="NN1_0" fontsize=8 shape=ellipse tooltip="20"]
+N1 -> NN1_0 [label=" 10" weight=100 tooltip="20" labeltooltip="20"]
+N1 -> NN1_1 [label=" 5" weight=100 tooltip="10" labeltooltip="10"]
+
+NN1_1[label = "用户3" id="N1_1" fontsize=8 shape=ellipse tooltip="10"]
+
+N1 ->N2 [label=" 70" weight=100 tooltip="70" labeltooltip="70"]
+subgraph cluster_A{
+        color=red 
+    label = "团长2的团队"
+N2 [label="团长2\n15 (70.00%)\nof 100 (100.00%)" id="node2" fontsize=21 shape=box tooltip="dest (25)" color="#b23c00" fillcolor="#edddd5"]
+
+}
+ }
+
+}

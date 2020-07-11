@@ -7,6 +7,11 @@ import (
 )
 
 func OfficialWxFactory(c container.Container, appConfig *config.AppConfig) (interface{}, error) {
-	useCase := officialwx.UseCase{}
-	return &useCase, nil
+	uc := appConfig.UseCase.OfficialWx
+	ori, err := buildOfficialWxRpc(c, uc)
+	if err != nil {
+		return nil, err
+	}
+	useCase := officialwx.NewUseCase(ori)
+	return useCase, nil
 }

@@ -59,6 +59,8 @@ type rxVoiceMessageSpecifics struct {
 	MediaID string `xml:"MediaId"`
 	// Format 语音格式，如amr，speex等
 	Format string `xml:"Format"`
+	// Recognition 语音识别结果，UTF8编码
+	Recognition string `xml:"Recognition"`
 }
 
 // rxVideoMessageSpecifics 接收的视频消息，特有字段

@@ -2,8 +2,6 @@
 
 package officialmodel
 
-import "encoding/xml"
-
 // rxMessageCommon 接收消息的公共部分
 type rxMessageCommon struct {
 	// ToUserName 开发者微信号
@@ -13,15 +11,15 @@ type rxMessageCommon struct {
 	// CreateTime 消息创建时间 （整型）
 	CreateTime int64 `xml:"CreateTime"`
 	// MsgType 消息类型，文本为text
-	MsgType MessageType `xml:"MsgType"`
+	MsgType RxMessageType `xml:"MsgType"`
 	// MsgID 消息id，64位整
 	MsgID int64 `xml:"MsgId"`
 }
 
-// prMessageCommon 接收消息的公共部分
-type prMessageCommon struct {
+// txMessageCommon 接收消息的公共部分
+type txMessageCommon struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
+	XMLName xmlName `xml:"xml"`
 	// ToUserName 开发者微信号
 	ToUserName cdataNode `xml:"ToUserName"`
 	// FromUserName 发送方帐号（一个OpenID）
@@ -34,29 +32,53 @@ type prMessageCommon struct {
 	MsgID int64 `xml:"MsgId"`
 }
 
-// MessageType 消息类型
-type MessageType string
+// RxMessageType 消息类型
+type RxMessageType string
 
-// MessageTypeText 文本消息
-const MessageTypeText MessageType = "text"
+// RxMessageTypeText 文本消息
+const RxMessageTypeText RxMessageType = "text"
 
-// MessageTypeImage 图片消息
-const MessageTypeImage MessageType = "image"
+// RxMessageTypeImage 图片消息
+const RxMessageTypeImage RxMessageType = "image"
 
-// MessageTypeVoice 语音消息
-const MessageTypeVoice MessageType = "voice"
+// RxMessageTypeVoice 语音消息
+const RxMessageTypeVoice RxMessageType = "voice"
 
-// MessageTypeVideo 视频消息
-const MessageTypeVideo MessageType = "video"
+// RxMessageTypeVideo 视频消息
+const RxMessageTypeVideo RxMessageType = "video"
 
-// MessageTypeShortVideo 小视频消息
-const MessageTypeShortVideo MessageType = "shortvideo"
+// RxMessageTypeShortVideo 小视频消息
+const RxMessageTypeShortVideo RxMessageType = "shortvideo"
 
-// MessageTypeLocation 位置消息
-const MessageTypeLocation MessageType = "location"
+// RxMessageTypeLocation 位置消息
+const RxMessageTypeLocation RxMessageType = "location"
 
-// MessageTypeLink 链接消息
-const MessageTypeLink MessageType = "link"
+// RxMessageTypeLink 链接消息
+const RxMessageTypeLink RxMessageType = "link"
+
+// TxMessageType 消息类型
+type TxMessageType string
+
+// TxMessageTypeText 文本消息
+const TxMessageTypeText TxMessageType = "text"
+
+// TxMessageTypeImage 图片消息
+const TxMessageTypeImage TxMessageType = "image"
+
+// TxMessageTypeVoice 语音消息
+const TxMessageTypeVoice TxMessageType = "voice"
+
+// TxMessageTypeVideo 视频消息
+const TxMessageTypeVideo TxMessageType = "video"
+
+// TxMessageTypeMusic 音乐消息
+const TxMessageTypeMusic TxMessageType = "music"
+
+// TxMessageTypeNews 图文消息
+const TxMessageTypeNews TxMessageType = "news"
+
+// TxMessageTypeCS 转发客服消息
+const TxMessageTypeCS TxMessageType = "transfer_customer_service"
 
 const (
 	ContentField      = "Content"
@@ -79,11 +101,11 @@ type rxTextMessageSpecifics struct {
 	Content string `xml:"Content"`
 }
 
-// prTextMessageSpecifics 接收的文本消息，特有字段
-type prTextMessageSpecifics struct {
+// txTextMessageSpecifics 发送的文本消息，特有字段
+type txTextMessageSpecifics struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// Content 文本消息内容
+	XMLName xmlName `xml:"xml"`
+	// Content 回复的消息内容（换行：在content中能够换行，微信客户端就支持换行显示）
 	Content cdataNode `xml:"Content"`
 }
 
@@ -95,13 +117,11 @@ type rxImageMessageSpecifics struct {
 	MediaID string `xml:"MediaId"`
 }
 
-// prImageMessageSpecifics 接收的图片消息，特有字段
-type prImageMessageSpecifics struct {
+// txImageMessageSpecifics 发送的图片消息，特有字段
+type txImageMessageSpecifics struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// PicURL 图片链接（由系统生成）
-	PicURL cdataNode `xml:"PicUrl"`
-	// MediaID 图片媒体文件id，可以调用获取媒体文件接口拉取，仅三天内有效
+	XMLName xmlName `xml:"Image"`
+	// MediaID 通过素材管理中的接口上传多媒体文件，得到的id。
 	MediaID cdataNode `xml:"MediaId"`
 }
 
@@ -111,16 +131,16 @@ type rxVoiceMessageSpecifics struct {
 	MediaID string `xml:"MediaId"`
 	// Format 语音格式，如amr，speex等
 	Format string `xml:"Format"`
+	// Recognition 语音识别结果，UTF8编码
+	Recognition string `xml:"Recognition"`
 }
 
-// prVoiceMessageSpecifics 接收的语音消息，特有字段
-type prVoiceMessageSpecifics struct {
+// txVoiceMessageSpecifics 发送的语音消息，特有字段
+type txVoiceMessageSpecifics struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// MediaID 语音媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	XMLName xmlName `xml:"Voice"`
+	// MediaID 通过素材管理中的接口上传多媒体文件，得到的id
 	MediaID cdataNode `xml:"MediaId"`
-	// Format 语音格式，如amr，speex等
-	Format cdataNode `xml:"Format"`
 }
 
 // rxVideoMessageSpecifics 接收的视频消息，特有字段
@@ -131,32 +151,24 @@ type rxVideoMessageSpecifics struct {
 	ThumbMediaID string `xml:"ThumbMediaId"`
 }
 
-// prVideoMessageSpecifics 接收的视频消息，特有字段
-type prVideoMessageSpecifics struct {
+// txVideoMessageSpecifics 发送的视频消息，特有字段
+type txVideoMessageSpecifics struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	XMLName xmlName `xml:"Video"`
+	// MediaID 通过素材管理中的接口上传多媒体文件，得到的id
 	MediaID cdataNode `xml:"MediaId"`
-	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
-	ThumbMediaID cdataNode `xml:"ThumbMediaId"`
+	// Title 视频消息的标题
+	Title cdataNode `xml:"Title"`
+	// Description 视频消息的描述
+	Description cdataNode `xml:"Description"`
 }
 
 // rxShortVideoMessageSpecifics 接收的小视频消息，特有字段
 type rxShortVideoMessageSpecifics struct {
 	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
 	MediaID string `xml:"MediaId"`
-	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
+	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内
 	ThumbMediaID string `xml:"ThumbMediaId"`
-}
-
-// prShortVideoMessageSpecifics 接收的小视频消息，特有字段
-type prShortVideoMessageSpecifics struct {
-	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// MediaID 视频媒体文件id，可以调用获取媒体文件接口拉取数据，仅三天内有效
-	MediaID cdataNode `xml:"MediaId"`
-	// ThumbMediaID 视频消息缩略图的媒体id，可以调用获取媒体文件接口拉取数据，仅三天内有效
-	ThumbMediaID cdataNode `xml:"ThumbMediaId"`
 }
 
 // rxLocationMessageSpecifics 接收的位置消息，特有字段
@@ -171,20 +183,6 @@ type rxLocationMessageSpecifics struct {
 	Label string `xml:"Label"`
 }
 
-// prLocationMessageSpecifics 接收的位置消息，特有字段
-type prLocationMessageSpecifics struct {
-	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// Lat 地理位置纬度
-	Lat float64 `xml:"Location_X"`
-	// Lon 地理位置经度
-	Lon float64 `xml:"Location_Y"`
-	// Scale 地图缩放大小
-	Scale int `xml:"Scale"`
-	// Label 地理位置信息
-	Label cdataNode `xml:"Label"`
-}
-
 // rxLinkMessageSpecifics 接收的链接消息，特有字段
 type rxLinkMessageSpecifics struct {
 	// Title 标题
@@ -195,14 +193,54 @@ type rxLinkMessageSpecifics struct {
 	URL string `xml:"Url"`
 }
 
-// prLinkMessageSpecifics 接收的链接消息，特有字段
-type prLinkMessageSpecifics struct {
+// txMusicMessageSpecifics 发送的音乐消息，特有字段 MsgType 音乐为music
+type txMusicMessageSpecifics struct {
 	// XMLName XML头
-	XMLName xml.Name `xml:"xml"`
-	// Title 标题
+	XMLName xmlName `xml:"Music"`
+	// Title 音乐标题
 	Title cdataNode `xml:"Title"`
-	// Description 描述
+	// Description 音乐描述
 	Description cdataNode `xml:"Description"`
-	// URL 链接跳转的url
+	// MusicURL 音乐链接
+	MusicURL cdataNode `xml:"MusicUrl"`
+	// HQMusicURL 高质量音乐链接，WIFI环境优先使用该链接播放音乐
+	HQMusicURL cdataNode `xml:"HQMusicUrl"`
+	// ThumbMediaID 缩略图的媒体id，通过素材管理中的接口上传多媒体文件，得到的id,必须字段
+	ThumbMediaID cdataNode `xml:"ThumbMediaId"`
+}
+
+// txNewsMessageSpecifics 发送的图文消息，特有字段 MsgType 图文为news
+type txNewsMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xmlName `xml:"xml"`
+	// ArticleCount 图文消息个数；当用户发送文本、图片、视频、图文、地理位置这五种消息时，开发者只能回复1条图文消息；其余场景最多可回复8条图文消息
+	ArticleCount int `xml:"ArticleCount"`
+	// Articles 图文消息信息，注意，如果图文数超过限制，则将只发限制内的条数
+	Articles []Items `xml:"Articles"`
+}
+
+// Items items
+type Items struct {
+	// Item item
+	Item item `xml:"item"`
+}
+
+// item 图文消息类型
+type item struct {
+	// Title 图文消息标题
+	Title cdataNode `xml:"Title"`
+	// Description 图文消息描述
+	Description cdataNode `xml:"Description"`
+	// PicURL 图片链接，支持JPG、PNG格式，较好的效果为大图360*200，小图200*200
+	PicURL cdataNode `xml:"PicUrl"`
+	// URL 点击图文消息跳转链接
 	URL cdataNode `xml:"Url"`
+}
+
+// txCSMessageSpecifics 发送的客服消息，特有字段 MsgType 客服为transfer_customer_service
+type txCSMessageSpecifics struct {
+	// XMLName XML头
+	XMLName xmlName `xml:"TransInfo"`
+	// KfAccount 指定会话接入的客服账号
+	KfAccount cdataNode `xml:"KfAccount"`
 }

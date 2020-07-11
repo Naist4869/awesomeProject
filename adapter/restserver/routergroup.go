@@ -1,12 +1,8 @@
 package restserver
 
-import "regexp"
-
-// IRouter http router framework interface.
-type IRouter interface {
-	IRoutes
-	Group(string, ...HandlerFunc) *RouterGroup
-}
+import (
+	"regexp"
+)
 
 // IRoutes http router interface.
 type IRoutes interface {

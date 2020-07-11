@@ -15,11 +15,14 @@ const (
 	WORKWX_DATA string = "workWxData"
 )
 const (
-	SQLDB      string = "sqldb"
-	COUCHDB    string = "couch"
-	CACHE_GRPC string = "cacheGrpc"
-	USER_GRPC  string = "userGrpc"
-	MONGO      string = "mongodb"
+	SQLDB           string = "sqldb"
+	COUCHDB         string = "couch"
+	CACHE_GRPC      string = "cacheGrpc"
+	USER_GRPC       string = "userGrpc"
+	FileSystem_GRPC string = "fileSystemGrpc"
+	TBK_GRPC        string = "tbkGrpc"
+	MONGO           string = "mongodb"
+	GRPC            string = "grpc"
 )
 
 // use case code. Need to map to the use case code (UseCaseConfig) in the configuration yaml file.
@@ -30,6 +33,7 @@ const (
 	LIST_COURSE  string = "listCourse"
 	WORKWX       string = "workWx"
 	OfficialWx   string = "officialWx"
+	Api          string = "api"
 )
 const (
 	Prometheus string = "prometheus"

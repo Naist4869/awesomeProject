@@ -1,6 +1,10 @@
 package config
 
-import "go.uber.org/zap/zapcore"
+import (
+	"time"
+
+	"go.uber.org/zap/zapcore"
+)
 
 const (
 	filePath           = "config/config.yaml"
@@ -10,16 +14,18 @@ const (
 
 // AppConfig represents the application config
 type AppConfig struct {
-	SQLConfig        DataStoreConfig `yaml:"sqlConfig"`
-	CouchdbConfig    DataStoreConfig `yaml:"couchdbConfig"`
-	CacheGrpcConfig  DataStoreConfig `yaml:"cacheGrpcConfig"`
-	UserGrpcConfig   DataStoreConfig `yaml:"userGrpcConfig"`
-	MongodbConfig    DataStoreConfig `yaml:"mongodbConfig"`
-	ZapConfig        LogConfig       `yaml:"zapConfig"`
-	LorusConfig      LogConfig       `yaml:"logrusConfig"`
-	Log              LogConfig       `yaml:"logConfig"`
-	PrometheusConfig MetricsConfig   `yaml:"metricsConfig"`
-	UseCase          UseCaseConfig   `yaml:"useCaseConfig"`
+	SQLConfig                 DataStoreConfig `yaml:"sqlConfig"`
+	CouchdbConfig             DataStoreConfig `yaml:"couchdbConfig"`
+	CacheGrpcConfig           DataStoreConfig `yaml:"cacheGrpcConfig"`
+	UserGrpcConfig            DataStoreConfig `yaml:"userGrpcConfig"`
+	MongodbConfig             DataStoreConfig `yaml:"mongodbConfig"`
+	FileSystemRpcClientConfig RpcClientConfig `yaml:"fileSystemRpcClientConfig"`
+	TBKRpcClientConfig        RpcClientConfig `yaml:"tbkRpcClientConfig"`
+	ZapConfig                 LogConfig       `yaml:"zapConfig"`
+	LorusConfig               LogConfig       `yaml:"logrusConfig"`
+	Log                       LogConfig       `yaml:"logConfig"`
+	PrometheusConfig          MetricsConfig   `yaml:"metricsConfig"`
+	UseCase                   UseCaseConfig   `yaml:"useCaseConfig"`
 }
 
 // UseCaseConfig represents different use cases
@@ -29,6 +35,7 @@ type UseCaseConfig struct {
 	ListCourse   ListCourseConfig   `yaml:"listCourse"`
 	WorkWx       WorkWxConfig       `yaml:"workWx"`
 	OfficialWx   OfficialWxConfig   `yaml:"officialWx"`
+	ApiUseCase   ApiUseCaseConfig   `yaml:"apiUseCase"`
 }
 type WorkWxConfig struct {
 	Code             string     `yaml:"code"`
@@ -37,12 +44,20 @@ type WorkWxConfig struct {
 	AgentID          int64      `yaml:"agentID"`
 	WorkWxDataConfig DataConfig `yaml:"workWxDataConfig"`
 }
+
+type ApiUseCaseConfig struct {
+	Limit int `yaml:"limit"`
+}
 type OfficialWxConfig struct {
 	Code         string `yaml:"code"`
 	OriID        string `yaml:"oriID"`        //可选; 公众号的原始ID(微信公众号管理后台查看), 如果设置了值则该Server只能处理 ToUserName 为该值的公众号的消息(事件);
 	AppID        string `yaml:"appID"`        // 可选; 公众号的AppId, 如果设置了值则安全模式时该Server只能处理 AppId 为该值的公众号的消息(事件);
 	Token        string `yaml:"token"`        //     必须; 公众号用于验证签名的token;
 	Base64AESKey string `yaml:"base64AESKey"` // 可选; aes加密解密key, 43字节长(base64编码, 去掉了尾部的'='), 安全模式必须设置;
+	Secret       string `yaml:"secret"`       // 应用 secret
+
+	FileSystemConfig RpcConfig `yaml:"fileSystemGrpcConfig"` // 文件管理系统Grpc配置
+	TBKConfig        RpcConfig `yaml:"tbkGrpcConfig"`        // 淘宝客系统Grpc配置
 }
 
 // RegistrationConfig represents registration use case
@@ -81,6 +96,17 @@ type DataStoreConfig struct {
 	User       string `yaml:"user"`
 	Pass       string `yaml:"pass"`
 	DB         string `yaml:"db"`
+}
+
+type RpcConfig struct {
+	Code   string          `yaml:"code"`
+	Client RpcClientConfig `yaml:"client"`
+}
+
+type RpcClientConfig struct {
+	Code        string        `yaml:"code"` // 目前只有grpc
+	DialTimeOut time.Duration `yaml:"dialTimeOut"`
+	Target      string        `yaml:"target"`
 }
 
 // LogConfig represents logger handler

@@ -3,6 +3,7 @@ package dataservice
 import (
 	"context"
 
+	"github.com/Naist4869/awesomeProject/model/officialmodel"
 	"github.com/Naist4869/awesomeProject/model/wxmodel"
 
 	"github.com/Naist4869/awesomeProject/model/usermodel"
@@ -27,4 +28,21 @@ type IUserDataService interface {
 
 type IWorkWxDataService interface {
 	Insert(u *wxmodel.UserInfo) (err error)
+}
+
+// 微信公众号rpc服务
+type IOfficialWxRpcService interface {
+	IFileSystemRpcService
+	ITBKRpcService
+}
+
+// 文件系统rpc服务
+type IFileSystemRpcService interface {
+	MediaIDGet(ctx context.Context, req officialmodel.MediaIDReq, args ...interface{}) (resp officialmodel.MediaIDResp, err error)
+}
+
+// 淘宝客rpc服务
+type ITBKRpcService interface {
+	TitleConvertTBKey(ctx context.Context, req officialmodel.TitleConvertTBKeyReq, args ...interface{}) (resp officialmodel.TitleConvertTBKeyResp, err error)
+	KeyConvertKey(ctx context.Context, req officialmodel.KeyConvertKeyReq, args ...interface{}) (resp officialmodel.KeyConvertKeyResp, err error)
 }

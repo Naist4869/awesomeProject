@@ -7,3 +7,5 @@ package main
 //go:generate go run --tags sdkcodegen ./internal/sdkcodegen ./docs/rx_msg.md ./model/wxmodel/rx_msg.md.go
 //go:generate go run --tags sdkcodegen ./internal/errcodegen ./errcodes/mod.go
 //go:generate go run --tags sdkcodegen ./internal/sdkcodegen ./docs/rx_msg_official.md ./model/officialmodel/rx_msg_official.md.go
+// 生成 gRPC 代码
+//go:generate kratos tool protoc --grpc --bm --swagger ./api/api.proto
