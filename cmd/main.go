@@ -21,8 +21,15 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	Version, Build string
+)
+
 func main() {
 	flag.Parse()
+	fmt.Println("Version:", Version)
+	fmt.Println("Build Time:", Build)
+
 	Container, err := buildContainer()
 	if err != nil {
 		log.BaseLogger.Fatal("容器创建失败", zap.Error(err))
